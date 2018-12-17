@@ -35,12 +35,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="assem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="assem_x86.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,6 +51,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="assem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="assem_x86.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
