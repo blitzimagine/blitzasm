@@ -37,7 +37,8 @@ private:
 		if (findSymbol(t.c_str(), n)) return true;
 		if (libs->findSymbol(t.c_str(), n)) return true;
 		string err = "Symbol '" + t + "' not found";
-		MessageBox(GetDesktopWindow(), err.c_str(), "Blitz Linker Error", MB_TOPMOST | MB_SETFOREGROUND);
+                cout << "Blitz Linker Error: " << err << endl;
+		//MessageBox(GetDesktopWindow(), err.c_str(), "Blitz Linker Error", MB_TOPMOST | MB_SETFOREGROUND);
 		return false;
 	}
 
