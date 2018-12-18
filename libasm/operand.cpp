@@ -81,7 +81,7 @@ bool Operand::parseConst(int *iconst) {
     int i;
     for (i = sgn; i < static_cast<int>(s.size()); ++i)
     {
-        if (hex && (isdigit(s[i]) || s[i] == 'x'))
+        if (hex && (isdigit(s[i]) || s[i] == 'x' || (s[i] >= 'a' && s[i] <= 'f') || (s[i] >= 'A' && s[i] >= 'F')))
             continue;
         if (!isdigit(s[i]))
             break;
@@ -91,7 +91,7 @@ bool Operand::parseConst(int *iconst) {
 
     int n;
     if (hex)
-        n = stol(s.c_str(), nullptr, 16);
+        n = stoll(s.c_str(), nullptr, 16);
     else
         n = atoi(s.c_str());
     *iconst = n;
