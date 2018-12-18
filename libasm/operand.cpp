@@ -76,12 +76,28 @@ bool Operand::parseLabel(string *label) {
 }
 
 bool Operand::parseConst(int *iconst) {
+  bool sgn = !s.empty() && (s[0] == '-' || s[0] == '+');
+  bool hex = s.size() > 1 && (s[0] == '0' && s[1] == 'x');
   int i;
-  bool sgn = s.size() && (s[0] == '-' || s[0] == '+');
-  for (i = sgn;i < (int)s.size() && isdigit(s[i]);++i) {}
-  if (i == sgn) return false;
-  int n = atoi(s.c_str());
-  *iconst = n;s = s.substr(i);return true;
+  for (i = sgn; i < static_cast<int>(s.size()); ++i)
+  {
+    if (hex && (isdigit(s[i]) || s[i] == 'x'))
+      continue;
+    if (!isdigit(s[i]))
+      break;
+  }
+  if (i == sgn)
+    return false;
+
+  int n;
+  if (hex)
+    n = stol(s.c_str(), nullptr, 16);
+  else
+    n = atoi(s.c_str());
+  *iconst = n;
+  s = s.substr(i);
+
+  return true;
 }
 
 void Operand::parse() {
