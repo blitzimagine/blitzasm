@@ -62,10 +62,30 @@ bool Operand::parseReg(int *reg) {
 bool Operand::parseFPReg(int *reg) {
 
     //eg: st(0)
-    if (s.size() < 5) return false;
-    if (s[0] != 's' || s[1] != 't' || s[2] != '(' || s[4] != ')') return false;
-    if (s[3]<'0' || s[3]>'7') return false;
-    *reg = s[3] - '0';s = s.substr(5);return true;
+    if (s.size() != 3 && s.size() != 5)
+        return false;
+    if (s[0] != 's' || s[1] != 't')
+        return false;
+
+    bool hasLBracket = s[2] == '(';
+    bool hasRBracket = s[4] == ')' && s.size() == 5;
+    if (hasLBracket != hasRBracket)
+        return false;
+
+    if (s.size() == 5)
+    {
+        if (s[3]<'0' || s[3]>'7')
+            return false;
+        *reg = s[3] - '0';
+    } else if (s.size() == 3)
+    {
+        if (s[2]<'0' || s[2]>'7')
+            return false;
+        *reg = s[2] - '0';
+    }
+
+    s = s.substr(s.size());
+    return true;
 }
 
 bool Operand::parseLabel(string *label) {
