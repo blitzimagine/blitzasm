@@ -78,22 +78,41 @@ bool Operand::parseLabel(string *label) {
 bool Operand::parseConst(int *iconst) {
     bool sgn = !s.empty() && (s[0] == '-' || s[0] == '+');
     bool hex = s.size() > 1 && (s[0] == '0' && s[1] == 'x');
-    int i;
-    for (i = sgn; i < static_cast<int>(s.size()); ++i)
+    bool flt = s.size() > 1 && (s[s.size() - 1] == 'f' || s[s.size() - 1] == 'F') && !hex;
+    int i = 0;
+    if (sgn)
+        i++;
+    if (hex)
+        i += 2;
+    int sz = static_cast<int>(s.size());
+    if (flt)
+        sz--;
+    for (; i < sz; ++i)
     {
-        if (hex && (isdigit(s[i]) || s[i] == 'x' || (s[i] >= 'a' && s[i] <= 'f') || (s[i] >= 'A' && s[i] >= 'F')))
+        if (flt && (isdigit(s[i]) || s[i] == '.'))
+            continue;
+        if (hex && (isdigit(s[i]) || (s[i] >= 'a' && s[i] <= 'f') || (s[i] >= 'A' && s[i] >= 'F')))
             continue;
         if (!isdigit(s[i]))
             break;
     }
-    if (i == sgn)
+    if (sgn && i == 1)
         return false;
+    if (hex && i == 2)
+        return false;
+    if (flt)
+        i++;
 
     int n;
-    if (hex)
-        n = stoll(s.c_str(), nullptr, 16);
+    if (flt)
+    {
+        float f = stof(s, nullptr);
+        n = *reinterpret_cast<int*>(&f);
+    }
+    else if (hex)
+        n = stoll(s, nullptr, 16);
     else
-        n = atoi(s.c_str());
+        n = stoll(s, nullptr, 10);
     *iconst = n;
     s = s.substr(i);
 
