@@ -38,3 +38,36 @@ bool BBModule::findSymbol( const char *sym,int *pc ){
 	*pc=it->second + (int)data;
 	return true;
 }
+
+bool BBModule::checkSymbols()
+{
+    BBModule* libs = nullptr;
+    int dest;
+    map<int, string>::iterator it;
+    for (it = rel_relocs.begin();it != rel_relocs.end();++it) {
+        if (!findSym(it->second, libs, &dest))
+        {
+            string t = it->second;
+            if (t.length() > 0 && t[0] != '_')
+            {
+                cout << "Offset: " << it->first << endl;
+                return false;
+            }
+        }
+    }
+
+    for (it = abs_relocs.begin();it != abs_relocs.end();++it) {
+        if (!findSym(it->second, libs, &dest))
+        {
+            string t = it->second;
+            if (t.length() > 0 && t[0] != '_')
+            {
+                cout << "Offset: " << it->first << endl;
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+

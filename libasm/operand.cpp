@@ -68,7 +68,7 @@ bool Operand::parseFPReg(int *reg) {
         return false;
 
     bool hasLBracket = s[2] == '(';
-    bool hasRBracket = s[4] == ')' && s.size() == 5;
+    bool hasRBracket = s.size() == 5 && s[4] == ')';
     if (hasLBracket != hasRBracket)
         return false;
 
@@ -97,13 +97,13 @@ bool Operand::parseLabel(string *label) {
 
 bool Operand::parseConst(int *iconst) {
     bool sgn = !s.empty() && (s[0] == '-' || s[0] == '+');
-    bool hex = s.size() > 1 && (s[0] == '0' && s[1] == 'x');
-    bool flt = s.size() > 1 && (s[s.size() - 1] == 'f' || s[s.size() - 1] == 'F') && !hex;
     int i = 0;
     if (sgn)
         i++;
+    bool hex = s.size() > 1 && (s[i+0] == '0' && s[i+1] == 'x');
     if (hex)
         i += 2;
+    bool flt = s.size() > 1 && (s[s.size() - 1] == 'f' || s[s.size() - 1] == 'F') && !hex;
     int sz = static_cast<int>(s.size());
     if (flt)
         sz--;
@@ -116,9 +116,7 @@ bool Operand::parseConst(int *iconst) {
         if (!isdigit(s[i]))
             break;
     }
-    if (sgn && i == 1)
-        return false;
-    if (hex && i == 2)
+    if (sgn && i == 1 || hex && i == 2 || sgn && hex && i == 3)
         return false;
     if (flt)
         i++;

@@ -330,4 +330,7 @@ void Assem_x86::assemble(std::istream* in, std::string filename){
 			throw Ex( x.ex/* + ": " +line.substr(0, line.length() - 1)*/, lIndex, filename );
 		}
 	}
+
+    //if (!mod->checkSymbols())
+    //    throw Ex("Invalid Symbol", filename);
 }

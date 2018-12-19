@@ -18,6 +18,8 @@ public:
 
 	bool findSymbol(const char *sym, int *pc);
 
+    bool checkSymbols();
+
 	std::map<std::string, int> getSymbols() { return symbols; };
 
 	int getDataSize() { return pc; }
@@ -35,10 +37,14 @@ private:
 
 	bool findSym(const string &t, BBModule *libs, int *n) {
 		if (findSymbol(t.c_str(), n)) return true;
-		if (libs->findSymbol(t.c_str(), n)) return true;
-		string err = "Symbol '" + t + "' not found";
-                cout << "Blitz Linker Error: " << err << endl;
-		//MessageBox(GetDesktopWindow(), err.c_str(), "Blitz Linker Error", MB_TOPMOST | MB_SETFOREGROUND);
+		if (libs && libs->findSymbol(t.c_str(), n)) return true;
+
+        if (t.length() > 0 && t[0] != '_')
+        {
+            string err = "Symbol '" + t + "' not found";
+            cout << "Blitz Linker Warning: " << err << endl;
+            //MessageBox(GetDesktopWindow(), err.c_str(), "Blitz Linker Error", MB_TOPMOST | MB_SETFOREGROUND);
+        }
 		return false;
 	}
 
