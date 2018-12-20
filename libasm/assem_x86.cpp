@@ -273,7 +273,7 @@ void Assem_x86::assemInst(const string& name, const string& lhs, const string& r
 
 void Assem_x86::assemDir(const string& name, const string& op)
 {
-    if (!op.size()) throw Ex("operand error");
+    if (op.empty()) throw Ex("operand error");
 
     if (name == ".db")
     {
@@ -308,21 +308,31 @@ void Assem_x86::assemLine(const string& line)
     vector<string> ops;
 
     size_t spc = line.find(' ') + 1;
-    string lbl = line.substr(0, spc);
+    size_t tab = line.find('\t') + 1;
+    size_t cutoff = min(spc, tab);
+    if (spc == 0)
+        cutoff = tab;
+    else if (tab == 0)
+        cutoff = spc;
+    string lbl = line.substr(0, cutoff);
 
     //label?
     //if( !isspace( line[i] ) ){
     if ((line.length() > 1 && line[line.length() - 2] == ':') || (lbl.length() > 2 && lbl[lbl.length() - 2] == ':'))
     {
-        while (!isspace(line[i])) ++i;
+        while (!isspace(line[i]))
+            ++i;
         string lab = line.substr(0, i - 1);
-        if (!mod->addSymbol(lab.c_str(), mod->getPC())) throw Ex("duplicate label", lab);
+        if (!mod->addSymbol(lab.c_str(), mod->getPC()))
+            throw Ex("duplicate label", lab);
         //return;
     }
 
     //skip space
-    while (isspace(line[i]) && line[i] != '\n') ++i;
-    if (line[i] == '\n' || line[i] == ';') return;
+    while (isspace(line[i]) && line[i] != '\n')
+        ++i;
+    if (line[i] == '\n' || line[i] == ';')
+        return;
 
     //fetch instruction name
     int from = i;
@@ -333,33 +343,40 @@ void Assem_x86::assemLine(const string& line)
     {
         //skip space
         while (isspace(line[i]) && line[i] != '\n') ++i;
-        if (line[i] == '\n' || line[i] == ';') break;
+        if (line[i] == '\n' || line[i] == ';')
+            break;
 
         int from = i;
         if (line[i] == '\"')
         {
             for (++i; line[i] != '\"' && line[i] != '\n'; ++i) {}
-            if (line[i++] != '\"') throw Ex("missing close quote");
+            if (line[i++] != '\"')
+                throw Ex("missing close quote");
         } else
         {
             for (++i; line[i] != ',' && line[i] != ';' && line[i] != '\n'; ++i) {}
         }
 
         //back-up over space
-        while (i && isspace(line[i - 1])) --i;
+        while (i && isspace(line[i - 1]))
+            --i;
         ops.push_back(line.substr(from, i - from));
 
         //skip space
-        while (isspace(line[i]) && line[i] != '\n') ++i;
-        if (line[i] == '\n' || line[i] == ';') break;
+        while (isspace(line[i]) && line[i] != '\n')
+            ++i;
+        if (line[i] == '\n' || line[i] == ';')
+            break;
 
-        if (line[i++] != ',') throw Ex("expecting ','");
+        if (line[i++] != ',')
+            throw Ex("expecting ','");
     }
 
     //pseudo op?
     if (name[0] == '.')
     {
-        for (int k = 0; k < (int)ops.size(); ++k) assemDir(name, ops[k]);
+        for (const auto& op : ops)
+            assemDir(name, op);
         return;
     }
 
@@ -369,19 +386,6 @@ void Assem_x86::assemLine(const string& line)
     ops.push_back("");
     assemInst(name, ops[0], ops[1]);
 }
-
-/*void Assem_x86::assem(std::istream* in)
-{
-	string line;
-	getline(*in, line);
-	line += "\n";
-
-	//if (line.substr(line.length() - 2) != ":")
-	//{
-	//	line = " " + line;
-	//}
-	assemLine(line);
-}*/
 
 void Assem_x86::assemble(std::istream* in, std::string filename)
 {
@@ -394,8 +398,6 @@ void Assem_x86::assemble(std::istream* in, std::string filename)
         try
         {
             getline(*in, line);
-            //if (line == "end_asm")
-            //	break;
             line += '\n';
 #ifdef LOG
 			clog<<line;
