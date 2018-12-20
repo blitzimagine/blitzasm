@@ -1,4 +1,3 @@
-
 #include "stdutil.h"
 
 #include <set>
@@ -127,135 +126,132 @@ void _cdecl operator delete[]( void *q,const char *file,int line ){ op_delete( q
 
 #else
 
-void trackmem( bool enable ){
-}
+void trackmem(bool enable) {}
 
-void checkmem( ostream &out ){
-}
+void checkmem(ostream& out) {}
 
 #endif
 
-int atoi( const string &s ){
-	return atoi( s.c_str() );
+int atoi(const string& s)
+{
+    return atoi(s.c_str());
 }
 
-double atof( const string &s ){
-	return atof( s.c_str() );
+double atof(const string& s)
+{
+    return atof(s.c_str());
 }
 
-string itoa( int n ){
-	char buff[32];_itoa_s( n,buff,10 );
-	return string( buff );
+string itoa(int n)
+{
+    char buff[32];
+    _itoa_s(n, buff, 10);
+    return string(buff);
 }
 
-static int b_finite( double n ){		// definition: exponent anything but 2047.
+static int b_finite(double n)
+{
+    // definition: exponent anything but 2047.
 
-	int e;					// 11 bit exponent
-	const int eMax = 2047;	// 0x7ff, all bits = 1	
-	
-	int *pn = (int *) &n;
+    int e; // 11 bit exponent
+    const int eMax = 2047; // 0x7ff, all bits = 1	
 
-	e = *++pn;				// Intel order!
-	e = ( e >> 20 ) & eMax;
+    int* pn = (int *)&n;
 
-	return e != eMax;
+    e = *++pn; // Intel order!
+    e = (e >> 20) & eMax;
+
+    return e != eMax;
 }
 
-static int b_isnan( double n ){		// definition: exponent 2047, nonzero fraction.
+static int b_isnan(double n)
+{
+    // definition: exponent 2047, nonzero fraction.
 
-	int e;					// 11 bit exponent
-	const int eMax = 2047;	// 0x7ff, all bits = 1	
-	
-	int *pn = (int *) &n;
+    int e; // 11 bit exponent
+    const int eMax = 2047; // 0x7ff, all bits = 1	
 
-	e = *++pn;				// Intel order!
-	e = ( e >> 20 ) & eMax;
+    int* pn = (int *)&n;
 
-	if ( e != 2047 ) return 0;	// almost always return here
+    e = *++pn; // Intel order!
+    e = (e >> 20) & eMax;
 
-	int fHi, fLo;				// 52 bit fraction
+    if (e != 2047) return 0; // almost always return here
 
-	fHi = ( *pn ) & 0xfffff;	// first 20 bits
-	fLo = *--pn;				// last 32 bits
+    int fHi, fLo; // 52 bit fraction
 
-	return  ( fHi | fLo ) != 0;	// returns 0,1 not just 0,nonzero
+    fHi = (*pn) & 0xfffff; // first 20 bits
+    fLo = *--pn; // last 32 bits
+
+    return (fHi | fLo) != 0; // returns 0,1 not just 0,nonzero
 }
 
 /////////////
 //By FLOYD!//
 /////////////
-string ftoa( float n ){
+string ftoa(float n)
+{
+    static const int digits = 6;
 
-	static const int digits=6;
+    int eNeg = -4, ePos = 8; // limits for e notation.
 
-	int eNeg = -4, ePos = 8;	// limits for e notation.
+    char buffer[50]; // from MSDN example, 25 would probably suffice
+    string t;
+    int dec, sign;
 
-	char buffer[50]; // from MSDN example, 25 would probably suffice
-	string t;
-	int dec, sign;
+    if (b_finite(n))
+    {
+        //		if ( digits < 1 ) digits = 1;	// less than one digit is nonsense
+        //		if ( digits > 8 ) digits = 8;	// practical maximum for float
 
-	if ( b_finite( n ) ){
+        //t = _ecvt( n, digits, &dec, &sign );
 
-//		if ( digits < 1 ) digits = 1;	// less than one digit is nonsense
-//		if ( digits > 8 ) digits = 8;	// practical maximum for float
-		
-		//t = _ecvt( n, digits, &dec, &sign );
+        char poo[256];
 
+        errno_t err = _ecvt_s(poo, 256, (int)n, &dec, &sign);
+        t = poo;
 
-		char poo[256];
+        if (dec <= eNeg + 1 || dec > ePos)
+        {
+            //_gcvt( n, digits, buffer );
 
-		errno_t err=_ecvt_s(poo,256, (int)n, &dec, &sign);
-		t = poo;
+            _gcvt_s(buffer, 50, n, digits);
 
-		if ( dec <= eNeg + 1 || dec > ePos ){
+            t = buffer;
+            return t;
+        }
 
-			//_gcvt( n, digits, buffer );
+        // Here is the tricky case. We want a nicely formatted
+        // number with no e-notation or multiple trailing zeroes.
 
+        if (dec <= 0)
+        {
+            t = "0." + string(-dec, '0') + t;
+            dec = 1; // new location for decimal point
+        } else if (dec < digits)
+        {
+            t = t.substr(0, dec) + "." + t.substr(dec);
+        } else
+        {
+            t = t + string(dec - digits, '0') + ".0";
+            dec += dec - digits;
+        }
 
-			_gcvt_s(buffer, 50, n, digits);
+        // Finally, trim off excess zeroes.
 
+        int dp1 = dec + 1, p = t.length();
+        while (--p > dp1 && t[p] == '0');
+        t = string(t, 0, ++p);
 
-			t = buffer;
-			return t;
-		}
-		
-		// Here is the tricky case. We want a nicely formatted
-		// number with no e-notation or multiple trailing zeroes.
-	
-		if ( dec <= 0 ){
+        return sign ? "-" + t : t;
+    } // end of finite case
 
-			t = "0." + string( -dec, '0' ) + t;
-			dec = 1;	// new location for decimal point
+    if (b_isnan(n)) return "NaN";
+    if (n > 0.0) return "Infinity";
+    if (n < 0.0) return "-Infinity";
 
-		}
-		else if( dec < digits ){
-
-			t = t.substr( 0, dec ) + "." + t.substr( dec );
-
-		}
-		else{
-
-			t = t + string( dec - digits, '0' ) + ".0";
-			dec += dec - digits;
-
-		}
-	
-		// Finally, trim off excess zeroes.
-
-		int dp1 = dec + 1, p = t.length();	
-		while( --p > dp1 && t[p] == '0' );
-		t = string( t, 0, ++p );
-
-		return sign ? "-" + t : t;
-
-	}	// end of finite case
-
-	if ( b_isnan( n ) )	return "NaN";
-	if ( n > 0.0 )		return "Infinity";
-	if ( n < 0.0 )		return "-Infinity";
-
-	abort();
-	return 0;
+    abort();
+    return 0;
 }
 
 /*
@@ -295,80 +291,97 @@ string ftoa( float n ){
 }
 */
 
-string tolower( const string &s ){
-	string t=s;
-	for( int k=0;k<(int)t.size();++k ) t[k]=tolower(t[k]);
-	return t;
+string tolower(const string& s)
+{
+    string t = s;
+    for (int k = 0; k < (int)t.size(); ++k) t[k] = tolower(t[k]);
+    return t;
 }
 
-string toupper( const string &s ){
-	string t=s;
-	for( int k=0;k<(int)t.size();++k ) t[k]=toupper(t[k]);
-	return t;
+string toupper(const string& s)
+{
+    string t = s;
+    for (int k = 0; k < (int)t.size(); ++k) t[k] = toupper(t[k]);
+    return t;
 }
 
-string fullfilename( const string &t ){
-	char buff[MAX_PATH+1],*p;
-	GetFullPathName( t.c_str(),MAX_PATH,buff,&p );
-	return string(buff);
+string fullfilename(const string& t)
+{
+    char buff[MAX_PATH + 1], *p;
+    GetFullPathName(t.c_str(),MAX_PATH, buff, &p);
+    return string(buff);
 }
 
-string filenamepath( const string &t ){
-	char buff[MAX_PATH+1],*p;
-	GetFullPathName( t.c_str(),MAX_PATH,buff,&p );
-	if( !p ) return "";
-	*p=0;return string(buff);
+string filenamepath(const string& t)
+{
+    char buff[MAX_PATH + 1], *p;
+    GetFullPathName(t.c_str(),MAX_PATH, buff, &p);
+    if (!p) return "";
+    *p = 0;
+    return string(buff);
 }
 
-string filenamefile( const string &t ){
-	char buff[MAX_PATH+1],*p;
-	GetFullPathName( t.c_str(),MAX_PATH,buff,&p );
-	if( !p ) return "";
-	return string( p );
+string filenamefile(const string& t)
+{
+    char buff[MAX_PATH + 1], *p;
+    GetFullPathName(t.c_str(),MAX_PATH, buff, &p);
+    if (!p) return "";
+    return string(p);
 }
 
-const int MIN_SIZE=256;
+const int MIN_SIZE = 256;
 
-qstreambuf::qstreambuf(){
-	buf=d_new char[MIN_SIZE];
-	setg( buf,buf,buf );
-	setp( buf,buf,buf+MIN_SIZE );
+qstreambuf::qstreambuf()
+{
+    buf = d_new char[MIN_SIZE];
+    setg(buf, buf, buf);
+    setp(buf, buf, buf + MIN_SIZE);
 }
 
-qstreambuf::~qstreambuf(){
-	delete buf;
+qstreambuf::~qstreambuf()
+{
+    delete buf;
 }
 
-int qstreambuf::size(){
-	return pptr()-gptr();
+int qstreambuf::size()
+{
+    return pptr() - gptr();
 }
 
-char *qstreambuf::data(){
-	return gptr();
+char* qstreambuf::data()
+{
+    return gptr();
 }
 
-qstreambuf::int_type qstreambuf::underflow(){
-	if( gptr()==egptr() ){
-		if( gptr()==pptr() ) return traits_type::eof();
-		setg( gptr(),gptr(),pptr() );
-	}
+qstreambuf::int_type qstreambuf::underflow()
+{
+    if (gptr() == egptr())
+    {
+        if (gptr() == pptr()) return traits_type::eof();
+        setg(gptr(), gptr(), pptr());
+    }
 
-	return traits_type::to_int_type( *gptr() );
+    return traits_type::to_int_type(*gptr());
 }
 
-qstreambuf::int_type qstreambuf::overflow( qstreambuf::int_type c ){
-	if( c==traits_type::eof() ) return c;
+qstreambuf::int_type qstreambuf::overflow(qstreambuf::int_type c)
+{
+    if (c == traits_type::eof()) return c;
 
-	if( pptr()==epptr() ){
-		int sz=size();
-		int n_sz=sz*2;if( n_sz<MIN_SIZE ) n_sz=MIN_SIZE;
-		char *n_buf=d_new char[ n_sz ];
-		memcpy( n_buf,gptr(),sz );
-		delete buf;buf=n_buf;
-		setg( buf,buf,buf+sz );
-		setp( buf+sz,buf+sz,buf+n_sz );
-	}
+    if (pptr() == epptr())
+    {
+        int sz = size();
+        int n_sz = sz * 2;
+        if (n_sz < MIN_SIZE) n_sz = MIN_SIZE;
+        char* n_buf = d_new char[ n_sz ];
+        memcpy(n_buf, gptr(), sz);
+        delete buf;
+        buf = n_buf;
+        setg(buf, buf, buf + sz);
+        setp(buf + sz, buf + sz, buf + n_sz);
+    }
 
-	*pptr()=traits_type::to_char_type( c );
-	pbump( 1 );return traits_type::not_eof( c );
+    *pptr() = traits_type::to_char_type(c);
+    pbump(1);
+    return traits_type::not_eof(c);
 }

@@ -1,66 +1,77 @@
-
 #include "std.h"
 #include "ex.h"
 #include "operand.h"
 #include "insts.h"
 
-static const char *regs[] = {
-        "al","cl","dl","bl","ah","ch","dh","bh",
-        "ax","cx","dx","bx","sp","bp","si","di",
-        "eax","ecx","edx","ebx","esp","ebp","esi","edi"
+static const char* regs[] = {
+    "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh",
+    "ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
+    "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
 };
 
-static void opError() {
+static void opError()
+{
     throw Ex("error in operand");
 }
 
-static void sizeError() {
+static void sizeError()
+{
     throw Ex("illegal operand size");
 }
 
 Operand::Operand()
-    :mode(NONE), reg(-1), imm(0), offset(0), baseReg(-1), indexReg(-1), shift(0) {
-}
+    : mode(NONE), reg(-1), imm(0), offset(0), baseReg(-1), indexReg(-1), shift(0) {}
 
-Operand::Operand(const string &s)
-    : mode(NONE), reg(-1), imm(0), offset(0), baseReg(-1), indexReg(-1), shift(0), s(s) {
-}
+Operand::Operand(const string& s)
+    : mode(NONE), reg(-1), imm(0), offset(0), baseReg(-1), indexReg(-1), shift(0), s(s) {}
 
-bool Operand::parseSize(int *sz) {
-
+bool Operand::parseSize(int* sz)
+{
     if (!s.size()) return false;
-    if (s.find("byte ") == 0) {
-        *sz = 1;s = s.substr(5);
-    }
-    else if (s.find("word ") == 0) {
-        *sz = 2;s = s.substr(5);
-    }
-    else if (s.find("dword ") == 0) {
-        *sz = 4;s = s.substr(6);
-    }
-    else return false;
+    if (s.find("byte ") == 0)
+    {
+        *sz = 1;
+        s = s.substr(5);
+    } else if (s.find("word ") == 0)
+    {
+        *sz = 2;
+        s = s.substr(5);
+    } else if (s.find("dword ") == 0)
+    {
+        *sz = 4;
+        s = s.substr(6);
+    } else return false;
 
     return true;
 }
 
-bool Operand::parseChar(char c) {
+bool Operand::parseChar(char c)
+{
     if (!s.size() || s[0] != c) return false;
-    s = s.substr(1);return true;
+    s = s.substr(1);
+    return true;
 }
 
-bool Operand::parseReg(int *reg) {
+bool Operand::parseReg(int* reg)
+{
     int i;
-    for (i = 0;i < (int)s.size() && isalpha(s[i]);++i) {}
+    for (i = 0; i < (int)s.size() && isalpha(s[i]); ++i) {}
     if (!i) return false;
     string t = s.substr(0, i);
-    for (int j = 0;j < 24;++j) {
-        if (t == regs[j]) { *reg = j;s = s.substr(i);return true; }
+    for (int j = 0; j < 24; ++j)
+    {
+        if (t == regs[j])
+        {
+            *reg = j;
+            s = s.substr(i);
+            return true;
+        }
     }
     return false;
 }
 
-bool Operand::parseFPReg(int *reg) {
-
+bool Operand::parseFPReg(int* reg)
+{
     //eg: st(0)
     if (s.size() != 3 && s.size() != 5)
         return false;
@@ -74,12 +85,12 @@ bool Operand::parseFPReg(int *reg) {
 
     if (s.size() == 5)
     {
-        if (s[3]<'0' || s[3]>'7')
+        if (s[3] < '0' || s[3] > '7')
             return false;
         *reg = s[3] - '0';
     } else if (s.size() == 3)
     {
-        if (s[2]<'0' || s[2]>'7')
+        if (s[2] < '0' || s[2] > '7')
             return false;
         *reg = s[2] - '0';
     }
@@ -88,19 +99,23 @@ bool Operand::parseFPReg(int *reg) {
     return true;
 }
 
-bool Operand::parseLabel(string *label) {
+bool Operand::parseLabel(string* label)
+{
     if (!s.size() || (!isalpha(s[0]) && s[0] != '_')) return false;
     int i;
-    for (i = 1;i < (int)s.size() && (isalnum(s[i]) || s[i] == '_');++i) {}
-    *label = s.substr(0, i);s = s.substr(i);return true;
+    for (i = 1; i < (int)s.size() && (isalnum(s[i]) || s[i] == '_'); ++i) {}
+    *label = s.substr(0, i);
+    s = s.substr(i);
+    return true;
 }
 
-bool Operand::parseConst(int *iconst) {
+bool Operand::parseConst(int* iconst)
+{
     bool sgn = !s.empty() && (s[0] == '-' || s[0] == '+');
     int i = 0;
     if (sgn)
         i++;
-    bool hex = s.size() > 1 && (s[i+0] == '0' && s[i+1] == 'x');
+    bool hex = s.size() > 1 && (s[i + 0] == '0' && s[i + 1] == 'x');
     if (hex)
         i += 2;
     bool flt = s.size() > 1 && (s[s.size() - 1] == 'f' || s[s.size() - 1] == 'F') && !hex;
@@ -126,8 +141,7 @@ bool Operand::parseConst(int *iconst) {
     {
         float f = stof(s, nullptr);
         n = *reinterpret_cast<int*>(&f);
-    }
-    else if (hex)
+    } else if (hex)
         n = stoll(s, nullptr, 16);
     else
         n = stoll(s, nullptr, 10);
@@ -137,49 +151,55 @@ bool Operand::parseConst(int *iconst) {
     return true;
 }
 
-void Operand::parse() {
-
+void Operand::parse()
+{
     if (!s.size()) return;
 
-    int sz;if (!parseSize(&sz)) sz = 0;
+    int sz;
+    if (!parseSize(&sz)) sz = 0;
 
-    if (s[0] != '[') {
+    if (s[0] != '[')
+    {
         int r;
-        if (parseReg(&r)) {
+        if (parseReg(&r))
+        {
             mode = REG | R_M;
-            if (r < 8) {
+            if (r < 8)
+            {
                 if (sz && sz != 1) sizeError();
                 mode |= REG8 | R_M8;
-                if (r == 0) mode |= AL;else if (r == 1) mode |= CL;
-            }
-            else if (r < 16) {
+                if (r == 0) mode |= AL;
+                else if (r == 1) mode |= CL;
+            } else if (r < 16)
+            {
                 if (sz && sz != 2) sizeError();
                 mode |= REG16 | R_M16;
-                if (r == 8) mode |= AX;else if (r == 9) mode |= CX;
-            }
-            else {
+                if (r == 8) mode |= AX;
+                else if (r == 9) mode |= CX;
+            } else
+            {
                 if (sz && sz != 4) sizeError();
                 mode |= REG32 | R_M32;
-                if (r == 16) mode |= EAX;else if (r == 17) mode |= ECX;
+                if (r == 16) mode |= EAX;
+                else if (r == 17) mode |= ECX;
             }
             reg = r & 7;
-        }
-        else if (parseFPReg(&r)) {
+        } else if (parseFPReg(&r))
+        {
             mode = FPUREG;
             if (!r) mode |= ST0;
             reg = r;
-        }
-        else if (parseLabel(&immLabel)) {
+        } else if (parseLabel(&immLabel))
+        {
             if (sz && sz != 4) sizeError();
             mode = IMM | IMM32;
-        }
-        else if (parseConst(&imm)) {
+        } else if (parseConst(&imm))
+        {
             mode = IMM;
             if (sz == 1) mode |= IMM8;
             else if (sz == 2) mode |= IMM16;
             else mode |= IMM32;
-        }
-        else opError();
+        } else opError();
         if (s.size()) opError();
         return;
     }
@@ -192,13 +212,17 @@ void Operand::parse() {
     else if (sz == 2) mode |= MEM16 | R_M16;
     else mode |= MEM32 | R_M32;
 
-    for (;;) {
-        int n;string l;
-        if (parseReg(&n)) {
+    for (;;)
+    {
+        int n;
+        string l;
+        if (parseReg(&n))
+        {
             if (n < 16) throw Ex("register must be 32 bit");
             n &= 7;
-            if (parseChar('*')) {
-                if (n == 4) break;		//esp cannot be index reg!
+            if (parseChar('*'))
+            {
+                if (n == 4) break; //esp cannot be index reg!
                 if (indexReg >= 0) break;
                 if (parseChar('1')) shift = 0;
                 else if (parseChar('2')) shift = 1;
@@ -206,21 +230,22 @@ void Operand::parse() {
                 else if (parseChar('8')) shift = 3;
                 else break;
                 indexReg = n;
-            }
-            else {
+            } else
+            {
                 if (baseReg < 0) baseReg = n;
-                else if (indexReg < 0) { indexReg = n; }
-                else break;
+                else if (indexReg < 0)
+                {
+                    indexReg = n;
+                } else break;
             }
-        }
-        else if (parseLabel(&l)) {
+        } else if (parseLabel(&l))
+        {
             if (baseLabel.size()) opError();
             baseLabel = l;
-        }
-        else if (parseConst(&n)) {
+        } else if (parseConst(&n))
+        {
             offset += n;
-        }
-        else break;
+        } else break;
         if (!s.size()) return;
     }
     opError();
