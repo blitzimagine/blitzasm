@@ -1,7 +1,7 @@
 #ifndef EX_H
 #define EX_H
 
-struct Ex
+struct Ex : std::exception
 {
     string ex; //what happened
     int line; //source offset

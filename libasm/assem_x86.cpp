@@ -84,7 +84,7 @@ void Assem_x86::emitd(int n)
 
 void Assem_x86::emitImm(const Operand& o, int size)
 {
-    if (size < 4 && o.immLabel.size()) throw Ex("immediate value cannot by a label");
+    if (size < 4 && !o.immLabel.empty()) throw Ex("immediate value cannot by a label");
 
     switch (size)
     {
